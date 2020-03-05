@@ -1,0 +1,26 @@
+sudo: required
+services:
+  - docker
+
+# First, build test image
+before_install:
+  - docker build -t waffeltje/react-test -f ./client/Dockerfile.dev ./client
+
+# Then, test test image
+script:
+  - docker run waafeltje/react-test npm test -- --coverage
+
+# Build production images
+after_success:
+  - docker build -t waffeltje/multi-client ./client
+  - docker build -t waffeltje/multi-nginx ./nginx
+  - docker build -t waffeltje/multi-server ./server
+  - docker build -t waffeltje/multi-worker ./worker
+  # Log in to the docker cli
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Take those images and push them to docker hub
+  - docker push waffeltje/multi-client
+  - docker push waffeltje/multi-nginx
+  - docker push waffeltje/multi-server
+  - docker push waffeltje/multi-worker
